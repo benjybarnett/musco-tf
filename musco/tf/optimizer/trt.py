@@ -1,7 +1,7 @@
 import os
 import gc
 import tensorflow as tf
-import tensorflow.contrib.tensorrt as trt
+#import tensorflow.contrib.tensorrt as trt
 from tensorflow.python.framework import graph_io
 
 

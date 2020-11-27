@@ -1,8 +1,8 @@
 import sys
 import logging
 import warnings
-from musco.tf.compressor.compress import CompressorVBMF, compress_seq, compress_noseq
-from musco.tf.optimizer.trt import Optimizer
+from muscotf.musco.tf.compressor.compress import CompressorVBMF, compress_seq, compress_noseq
+from muscotf.musco.tf.optimizer.trt import Optimizer
 
 logging.disable(logging.CRITICAL)
 

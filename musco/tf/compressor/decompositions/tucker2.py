@@ -1,10 +1,10 @@
 import numpy as np
 from sktensor import dtensor, tucker
 from tensorflow import keras
-from musco.tf.compressor.decompositions.constructor import construct_compressor
-from musco.tf.compressor.rank_selection.estimator import estimate_rank_for_compression_rate, estimate_vbmf_ranks
-from musco.tf.compressor.common.utils import to_tf_kernel_order, to_pytorch_kernel_order
-from musco.tf.compressor.exceptions.compression_error import CompressionError
+from muscotf.musco.tf.compressor.decompositions.constructor import construct_compressor
+from muscotf.musco.tf.compressor.rank_selection.estimator import estimate_rank_for_compression_rate, estimate_vbmf_ranks
+from muscotf.musco.tf.compressor.common.utils import to_tf_kernel_order, to_pytorch_kernel_order
+from muscotf.musco.tf.compressor.exceptions.compression_error import CompressionError
 
 
 def get_conv_params(layer):

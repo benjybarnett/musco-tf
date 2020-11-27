@@ -54,16 +54,22 @@ def build_sequence(layer, weights, biases, layer_classes, layer_confs, confs, ne
 
 
 def construct_compressor(get_params, get_rank, get_decomposer, get_factor_params, get_config, accepted_layers):
+    
     def compressor(layer, rank, optimize_rank=False, copy_conf=False, **kwargs):
         check_layer_type(layer, accepted_layers)
         params = get_params(layer)
 
         if optimize_rank and get_rank is not None:
+            
             rank = get_rank(layer, rank=rank, **params, **kwargs)
+            
             if isinstance(rank, tuple):
+                
                 rank = [1 if rank == 0 else r for r in rank]
             else:
+                
                 rank = rank if rank != 0 else 1
+                print("New ranks of approxiimating tensors: ",rank)
         weights, biases = get_decomposer(layer, rank, **params)
         params_for_factors = get_factor_params(rank=rank, **params)
         layer_seq = build_sequence(layer,

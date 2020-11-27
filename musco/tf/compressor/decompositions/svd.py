@@ -1,9 +1,9 @@
 # SVD decomposition for Dense layer. Replace Dense to [Dense, Dense].
 
 import numpy as np
-from musco.tf.compressor.decompositions.constructor import construct_compressor
+from muscotf.musco.tf.compressor.decompositions.constructor import construct_compressor
 from tensorflow import keras
-from musco.tf.compressor.common.utils import del_keys
+from muscotf.musco.tf.compressor.common.utils import del_keys
 
 
 def get_params(layer):

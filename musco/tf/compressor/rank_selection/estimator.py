@@ -1,11 +1,12 @@
 import numpy as np
 import tensorly as tl
-from musco.tf.compressor.rank_selection import vbmf
+from muscotf.musco.tf.compressor.rank_selection import vbmf
 
 tl.set_backend("numpy")
 
 
 def weaken_rank(rank, extreme_rank, k):
+    
     if rank < 21:
         wrank = rank
     elif extreme_rank == 0:
@@ -37,7 +38,7 @@ def estimate_vbmf_ranks(weights, k=1):
             _, diag_1, _, _ = vbmf.evbmf(unfold_1)
 
         ranks = [diag_0.shape[0], diag_1.shape[1]]
-
+        
         ranks_weak = [weaken_rank(unfold_0.shape[0], ranks[0], k),
                       weaken_rank(unfold_1.shape[0], ranks[1], k)]
 

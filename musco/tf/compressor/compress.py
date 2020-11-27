@@ -5,12 +5,13 @@ import tensorflow as tf
 from absl import logging
 from tensorflow.keras.models import Model
 from tensorflow import keras
-from musco.tf.compressor.decompositions.cp3 import get_cp3_seq
-from musco.tf.compressor.decompositions.cp4 import get_cp4_seq
-from musco.tf.compressor.decompositions.svd import get_svd_seq
-from musco.tf.compressor.decompositions.tucker2 import get_tucker2_seq
-from musco.tf.compressor.exceptions.compression_error import CompressionError
+from muscotf.musco.tf.compressor.decompositions.cp3 import get_cp3_seq
+from muscotf.musco.tf.compressor.decompositions.cp4 import get_cp4_seq
+from muscotf.musco.tf.compressor.decompositions.svd import get_svd_seq
+from muscotf.musco.tf.compressor.decompositions.tucker2 import get_tucker2_seq
+from muscotf.musco.tf.compressor.exceptions.compression_error import CompressionError
 from tqdm import tqdm
+
 
 
 def compress_seq(model, decompose_info, optimize_rank=False, vbmf=True, vbmf_weaken_factor=0.8):
@@ -84,7 +85,8 @@ def compress_seq(model, decompose_info, optimize_rank=False, vbmf=True, vbmf_wea
 def insert_layer_noseq(model, layer_regexs):
     # Auxiliary dictionary to describe the network graph.
     network_dict = dict(input_layers_of={}, new_output_tensor_of={})
-    current_session = tf.keras.backend.get_session()
+    #current_session = tf.keras.backend.get_session()
+    current_session = tf.compat.v1.keras.backend.get_session()
 
     # Set the input layers of each layer.
     for layer in model.layers:
@@ -146,9 +148,12 @@ def insert_layer_noseq(model, layer_regexs):
         network_dict["new_output_tensor_of"].update({layer.name: x})
 
     # Reconstruct graph.
-    tf.reset_default_graph()
-    new_sess = tf.Session()
-    tf.keras.backend.set_session(new_sess)
+    #tf.reset_default_graph()
+    tf.compat.v1.reset_default_graph()
+    #new_sess = tf.Session()
+    new_sess = tf.compat.v1.Session()
+    #tf.keras.backend.set_session(new_sess)
+    tf.compat.v1.keras.backend.set_session(new_sess) 
 
     input_constructor, input_conf, _ = conenctions[layers_order[0]]
     new_model_input = input_constructor.from_config(input_conf)
@@ -184,7 +189,7 @@ def compress_noseq(model, decompose_info, optimize_rank=False, vbmf=True, vbmf_w
             continue
 
         decompose, decomp_rank = decompose_info[layer.name]
-
+        
         try:
             if decompose.lower() == "svd":
                 layer_regexs[layer.name] = get_svd_seq(layer, rank=decomp_rank)
@@ -202,6 +207,8 @@ def compress_noseq(model, decompose_info, optimize_rank=False, vbmf=True, vbmf_w
                                                            optimize_rank=optimize_rank,
                                                            vbmf=vbmf,
                                                            vbmf_weaken_factor=vbmf_weaken_factor)
+
+               
         except ValueError:
             continue
 
@@ -211,13 +218,14 @@ def compress_noseq(model, decompose_info, optimize_rank=False, vbmf=True, vbmf_w
 
 
 class CompressorVBMF:
-    def __init__(self, model, number=5, conv2d="tucker2", vbmf_weaken_factor=0.8):
+    def __init__(self, model, compression_layers,number=5, conv2d="tucker2", vbmf_weaken_factor=0.8):
         self.model = model
         self.layers = []
         self.iteration = 0
         self.number = number
         self.vbmf_weaken_factor = vbmf_weaken_factor
-
+        self.compression_layers = compression_layers
+        
         if conv2d == "tucker2":
             self.conv2d = (conv2d, (None, None))
         elif conv2d == "cp3" or conv2d == "cp4":
@@ -231,23 +239,36 @@ class CompressorVBMF:
             elif isinstance(layer, keras.layers.Dense):
                 self.layers.append([layer.name, ("svd", None)])
 
+
+
+                
+        
     def compress_iteration(self):
+        
         if self.iteration * self.number >= len(self.layers):
             self.iteration = 0
             self.layers = []
-
+            
             for layer in self.model.layers:
+               
                 if isinstance(layer, keras.layers.Conv2D):
                     self.layers.append([layer.name, self.conv2d])
                 elif isinstance(layer, keras.layers.Dense):
                     self.layers.append([layer.name, ("svd", None)])
-
-        layers_to_compress = self.layers[self.iteration * self.number:self.iteration * self.number + self.number]
+        
+        #Removing non-compression layers as we only want to compress one layer
+       
+        #layers_to_compress = self.layers[self.iteration * self.number:self.iteration * self.number + self.number]
+        layers_to_compress = [layer for layer in self.layers if layer[0] in self.compression_layers]
+        print('compressing these layers:',layers_to_compress)
+        
         self.iteration += 1
         decompose_info = dict()
 
         for layer in layers_to_compress:
             decompose_info[layer[0]] = layer[1]
+        
+      
 
         self.model = compress_noseq(self.model, decompose_info, optimize_rank=True, vbmf=True,
                                     vbmf_weaken_factor=self.vbmf_weaken_factor)
@@ -261,3 +282,5 @@ class CompressorVBMF:
         :return:
         """
         return int(len(np.ceil(len(self.layers) / self.number)))
+
+   

@@ -3,12 +3,12 @@
 import numpy as np
 from sktensor import dtensor, cp_als
 from tensorflow import keras
-from musco.tf.compressor.decompositions.cpd import recompress_ncpd_tensor
-from musco.tf.compressor.decompositions.constructor import construct_compressor
-from musco.tf.compressor.rank_selection.estimator import estimate_rank_for_compression_rate
-from musco.tf.compressor.common.utils import to_tf_kernel_order, to_pytorch_kernel_order
-from musco.tf.compressor.layers.group_conv_2d import GroupConv2D
-from musco.tf.compressor.exceptions.compression_error import CompressionError
+from muscotf.musco.tf.compressor.decompositions.cpd import recompress_ncpd_tensor
+from muscotf.musco.tf.compressor.decompositions.constructor import construct_compressor
+from muscotf.musco.tf.compressor.rank_selection.estimator import estimate_rank_for_compression_rate
+from muscotf.musco.tf.compressor.common.utils import to_tf_kernel_order, to_pytorch_kernel_order
+from muscotf.musco.tf.compressor.layers.group_conv_2d import GroupConv2D
+from muscotf.musco.tf.compressor.exceptions.compression_error import CompressionError
 
 
 def get_conv_params(layer):
