@@ -5,13 +5,14 @@ import tensorflow as tf
 from absl import logging
 from tensorflow.keras.models import Model
 from tensorflow import keras
+from tensorflow.keras import layers
 from muscotf.musco.tf.compressor.decompositions.cp3 import get_cp3_seq
 from muscotf.musco.tf.compressor.decompositions.cp4 import get_cp4_seq
 from muscotf.musco.tf.compressor.decompositions.svd import get_svd_seq
 from muscotf.musco.tf.compressor.decompositions.tucker2 import get_tucker2_seq
 from muscotf.musco.tf.compressor.exceptions.compression_error import CompressionError
 from tqdm import tqdm
-
+import copy
 
 
 def compress_seq(model, decompose_info, optimize_rank=False, vbmf=True, vbmf_weaken_factor=0.8):
@@ -87,7 +88,7 @@ def insert_layer_noseq(model, layer_regexs):
     network_dict = dict(input_layers_of={}, new_output_tensor_of={})
     #current_session = tf.keras.backend.get_session()
     current_session = tf.compat.v1.keras.backend.get_session()
-
+    
     # Set the input layers of each layer.
     for layer in model.layers:
         try:
@@ -103,10 +104,11 @@ def insert_layer_noseq(model, layer_regexs):
                     {layer_name: [layer.name]})
             else:
                 network_dict["input_layers_of"][layer_name].append(layer.name)
-
+    
     # Set the output tensor of the input layer.
     network_dict["new_output_tensor_of"].update(
         {model.layers[0].name: model.input})
+    
 
     # Iterate over all layers after the input.
     conenctions = dict({model.layers[0].name: (model.layers[0].__class__,
@@ -115,6 +117,7 @@ def insert_layer_noseq(model, layer_regexs):
     layers_order = [model.layers[0].name]
 
     for layer in tqdm(model.layers[1:], desc="{Insert layers}"):
+        
         added_layer = None
 
         # Determine input tensors.
@@ -123,11 +126,13 @@ def insert_layer_noseq(model, layer_regexs):
 
         if len(layer_input) == 1:
             layer_input = layer_input[0]
-
+            
+        
         # Insert layer if name matches the regular expression.
         changed = False
 
         for layer_regex, new_layer in layer_regexs.items():
+            
             if layer_regex != layer.name:
                 continue
 
@@ -136,8 +141,9 @@ def insert_layer_noseq(model, layer_regexs):
             # print("Layer {} replace layer {}".format(new_layer.name, layer.name))
             added_layer = new_layer
             break
-
+               
         if not changed:
+            
             x = layer(layer_input)
             added_layer = layer
 
@@ -238,12 +244,15 @@ class CompressorVBMF:
                 self.layers.append([layer.name, self.conv2d])
             elif isinstance(layer, keras.layers.Dense):
                 self.layers.append([layer.name, ("svd", None)])
+            elif isinstance(layer,keras.Sequential):
+                self.layers.append([layer.name, self.conv2d])
 
 
 
                 
         
     def compress_iteration(self):
+        
         
         if self.iteration * self.number >= len(self.layers):
             self.iteration = 0
@@ -257,7 +266,7 @@ class CompressorVBMF:
                     self.layers.append([layer.name, ("svd", None)])
         
         #Removing non-compression layers as we only want to compress one layer
-       
+        
         #layers_to_compress = self.layers[self.iteration * self.number:self.iteration * self.number + self.number]
         layers_to_compress = [layer for layer in self.layers if layer[0] in self.compression_layers]
         print('compressing these layers:',layers_to_compress)

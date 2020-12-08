@@ -69,7 +69,7 @@ def construct_compressor(get_params, get_rank, get_decomposer, get_factor_params
             else:
                 
                 rank = rank if rank != 0 else 1
-                print("New ranks of approxiimating tensors: ",rank)
+                print("New ranks of approximating tensors: ",rank)
         weights, biases = get_decomposer(layer, rank, **params)
         params_for_factors = get_factor_params(rank=rank, **params)
         layer_seq = build_sequence(layer,
